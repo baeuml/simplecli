@@ -98,7 +98,6 @@ class Manager(object):
         return self.app
 
     def create_parser(self, prog):
-
         """
         Creates an ArgumentParser instance from options returned
         by get_options(), and a subparser for the given command.
@@ -118,7 +117,6 @@ class Manager(object):
         return self._options
 
     def add_command(self, name, command):
-
         """
         Adds command to registry.
 
@@ -136,7 +134,6 @@ class Manager(object):
 
         :param func: command function.Arguments depend on the
                      options.
-
         """
 
         args, varargs, keywords, defaults = inspect.getargspec(func)
@@ -181,7 +178,6 @@ class Manager(object):
         return func
 
     def option(self, *args, **kwargs):
-
         """
         Decorator to add an option to a function. Automatically registers the
         function - do not use together with ``@command``. You can add as many
@@ -233,11 +229,11 @@ class Manager(object):
         return func
 
     def get_usage(self):
-
         """
         Returns string consisting of all commands and their
         descriptions.
         """
+
         pad = max(map(len, self._commands.iterkeys())) + 2
         format = '  %%- %ds%%s' % pad
 
@@ -260,7 +256,6 @@ class Manager(object):
         return "\n".join(rv)
 
     def print_usage(self):
-
         """
         Prints result of get_usage()
         """
@@ -306,7 +301,6 @@ class Manager(object):
         return command.handle(app, *positional_args, **command_namespace.__dict__)
 
     def run(self, commands=None, default_command=None):
-
         """
         Prepares manager to receive command line input. Usually run
         inside "if __name__ == "__main__" block in a Python script.
@@ -339,3 +333,4 @@ class Manager(object):
             self.print_usage()
 
         sys.exit(1)
+

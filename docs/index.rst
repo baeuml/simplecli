@@ -508,8 +508,6 @@ API
 
 .. autoclass:: Shell
 
-.. autoclass:: Server
-
 .. autoclass:: Option
 
 .. autoclass:: Group

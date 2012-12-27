@@ -8,8 +8,6 @@ import warnings
 
 import argparse
 
-from flask import _request_ctx_stack
-
 from .cli import prompt, prompt_pass, prompt_bool, prompt_choices
 
 
@@ -136,11 +134,10 @@ class Command(object):
 
     def handle(self, app, *args, **kwargs):
         """
-        Handles the command with given app. Default behaviour is to call within
-        a test request context.
+        Handles the command.
         """
-        with app.test_request_context():
-            return self.run(*args, **kwargs)
+        #TODO: pass app context
+        return self.run(*args, **kwargs)
 
     def run(self):
         """
@@ -179,12 +176,11 @@ class Command(object):
 
 class Shell(Command):
     """
-    Runs a Python shell inside Flask application context.
+    Runs a Python shell.
 
     :param banner: banner appearing at top of shell when started
     :param make_context: a callable returning a dict of variables
-                         used in the shell namespace. By default
-                         returns a dict consisting of just the app.
+                         used in the shell namespace.
     :param use_bpython: use BPython shell if available, ignore if not.
                         The BPython shell can be turned off in command
                         line by passing the **--no-bpython** flag.
@@ -203,9 +199,6 @@ class Shell(Command):
         self.banner = banner or self.banner
         self.use_ipython = use_ipython
         self.use_bpython = use_bpython
-
-        if make_context is None:
-            make_context = lambda: dict(app=_request_ctx_stack.top.app)
 
         self.make_context = make_context
 
@@ -259,110 +252,6 @@ class Shell(Command):
         code.interact(self.banner, local=context)
 
 
-class Server(Command):
-    """
-    Runs the Flask development server i.e. app.run()
-
-    :param host: server host
-    :param port: server port
-    :param use_debugger: if False, will no longer use Werkzeug debugger.
-                         This can be overriden in the command line
-                         by passing the **-d** flag.
-    :param use_reloader: if False, will no longer use auto-reloader.
-                         This can be overriden in the command line by
-                         passing the **-r** flag.
-    :param threaded: should the process handle each request in a separate
-                     thread?
-    :param processes: number of processes to spawn
-    :param passthrough_errors: disable the error catching. This means that the server will die on errors but it can be useful to hook debuggers in (pdb etc.)
-    :param options: :func:`werkzeug.run_simple` options.
-    """
-
-    description = 'Runs the Flask development server i.e. app.run()'
-
-    def __init__(self, host='127.0.0.1', port=5000, use_debugger=True,
-                 use_reloader=True, threaded=False, processes=1,
-                 passthrough_errors=False, **options):
-
-        self.port = port
-        self.host = host
-        self.use_debugger = use_debugger
-        self.use_reloader = use_reloader
-        self.server_options = options
-        self.threaded = threaded
-        self.processes = processes
-        self.passthrough_errors = passthrough_errors
-
-    def get_options(self):
-
-        options = (
-            Option('-t', '--host',
-                   dest='host',
-                   default=self.host),
-
-            Option('-p', '--port',
-                   dest='port',
-                   type=int,
-                   default=self.port),
-
-            Option('--threaded',
-                   dest='threaded',
-                   action='store_true',
-                   default=self.threaded),
-
-            Option('--processes',
-                   dest='processes',
-                   type=int,
-                   default=self.processes),
-
-            Option('--passthrough-errors',
-                   action='store_true',
-                   dest='passthrough_errors',
-                   default=self.passthrough_errors),
-        )
-
-        if self.use_debugger:
-            options += (Option('-d', '--no-debug',
-                               action='store_false',
-                               dest='use_debugger',
-                               default=self.use_debugger),)
-
-        else:
-            options += (Option('-d', '--debug',
-                               action='store_true',
-                               dest='use_debugger',
-                               default=self.use_debugger),)
-
-        if self.use_reloader:
-            options += (Option('-r', '--no-reload',
-                               action='store_false',
-                               dest='use_reloader',
-                               default=self.use_reloader),)
-
-        else:
-            options += (Option('-r', '--reload',
-                               action='store_true',
-                               dest='use_reloader',
-                               default=self.use_reloader),)
-
-        return options
-
-    def handle(self, app, host, port, use_debugger, use_reloader,
-               threaded, processes, passthrough_errors):
-        # we don't need to run the server in request context
-        # so just run it directly
-
-        app.run(host=host,
-                port=port,
-                debug=app.config.get('DEBUG', use_debugger),
-                use_debugger=use_debugger,
-                use_reloader=use_reloader,
-                threaded=threaded,
-                processes=processes,
-                passthrough_errors=passthrough_errors,
-                **self.server_options)
-
-
 class Clean(Command):
     "Remove *.pyc and *.pyo files recursively starting at current directory"
     def run(self):
@@ -374,29 +263,3 @@ class Clean(Command):
                     os.remove(full_pathname)
 
 
-class ShowUrls(Command):
-    """
-        Displays all of the url matching routes for the project.
-    """
-    def __init__(self, order='rule'):
-        self.order = order
-
-    def get_options(self):
-        options = super(ShowUrls, self).get_options()
-        options += Option('--order',
-                          dest='order',
-                          default=self.order,
-                          help='Property on Rule to order by (default: %s)' % self.order,
-                          ),
-
-        return options
-
-    def run(self, order):
-        from flask import current_app
-
-        print "%-30s" % 'Rule', 'Endpoint'
-        print '-' * 80
-
-        rules = sorted(current_app.url_map.iter_rules(), key=lambda rule: getattr(rule, order))
-        for rule in rules:
-            print "%-30s" % rule, rule.endpoint

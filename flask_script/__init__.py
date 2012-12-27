@@ -8,12 +8,10 @@ import inspect
 
 import argparse
 
-from flask import Flask
-
-from .commands import Group, Option, InvalidCommand, Command, Server, Shell
+from .commands import Group, Option, InvalidCommand, Command, Shell
 from .cli import prompt, prompt_pass, prompt_bool, prompt_choices
 
-__all__ = ["Command", "Shell", "Server", "Manager", "Group", "Option",
+__all__ = ["Command", "Shell", "Manager", "Group", "Option",
            "prompt", "prompt_pass", "prompt_bool", "prompt_choices"]
 
 
@@ -28,9 +26,7 @@ class Manager(object):
             def run(self):
                 print "hello"
 
-        app = Flask(__name__)
-
-        manager = Manager(app)
+        manager = Manager()
         manager.add_command("print", Print())
 
         if __name__ == "__main__":
@@ -41,35 +37,20 @@ class Manager(object):
         python manage.py print
         > hello
 
-    :param app: Flask instance or callable returning a Flask instance.
-    :param with_default_commands: load commands **runserver** and **shell**
-                                  by default.
+    :param app: A variable containing context for the commands,
+                or a callable that returns such a variable.
     """
 
-    def __init__(self, app=None, with_default_commands=None, usage=None):
+    def __init__(self, app=None, usage=None):
 
         self.app = app
 
         self._commands = dict()
         self._options = list()
 
-        # Primary/root Manager instance adds default commands by default,
-        # Sub-Managers do not
-        if with_default_commands or (app and with_default_commands is None):
-            self.add_default_commands()
-
         self.usage = usage
 
         self.parent = None
-
-    def add_default_commands(self):
-        """
-        Adds the shell and runserver default commands. To override these
-        simply add your own equivalents using add_command or decorators.
-        """
-
-        self.add_command("shell", Shell())
-        self.add_command("runserver", Server())
 
     def add_option(self, *args, **kwargs):
         """
@@ -83,14 +64,15 @@ class Manager(object):
 
         The arguments are then passed to your function, e.g.::
 
-            def create_app(config=None):
-                app = Flask(__name__)
+            def create_ctx(config=None):
+                app_ctx = {}
                 if config:
-                    app.config.from_pyfile(config)
+                    import simplejson
+                    app_ctx = simplejson.load(open(config))
 
-                return app
+                return app_ctx
 
-            manager = Manager(create_app)
+            manager = Manager(create_ctx)
             manager.add_option("-c", "--config", dest="config", required=False)
 
         and are evoked like this::
@@ -110,10 +92,10 @@ class Manager(object):
             # Sub-manager, defer to parent Manager
             return self.parent.create_app(**kwargs)
 
-        if isinstance(self.app, Flask):
-            return self.app
+        if hasattr(self.app, '__call__'):
+            return self.app(**kwargs)
 
-        return self.app(**kwargs)
+        return self.app
 
     def create_parser(self, prog):
 

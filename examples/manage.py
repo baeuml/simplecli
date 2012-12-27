@@ -1,20 +1,21 @@
 import pprint
+import simplejson
 
-from flask import Flask, current_app
-from flask.ext.script import Manager, prompt_choices, Server
+from flask_script import Manager, prompt_choices, Shell
 
+class App:
+    pass
+app = App()
 
 def create_app(config=None):
-    app = Flask(__name__)
     app.debug = False
-    print "CONFIG", config
+    app.config = {}
+    print "CONFIG:", app.config
 
-    app.config.from_envvar('APP_CONFIG', silent=True)
-
-    @app.route("/")
-    def index():
-        # deliberate error, test debug working
-        assert False, "oops"
+    if config is not None:
+        print "Loading config from", config
+        app.config.update(simplejson.load(open(config, "r")))
+        print "CONFIG:", app.config
 
     return app
 
@@ -24,7 +25,7 @@ manager = Manager(create_app)
 @manager.command
 def dumpconfig():
     "Dumps config"
-    pprint.pprint(current_app.config)
+    pprint.pprint(app.config)
 
 
 @manager.command
@@ -73,7 +74,7 @@ manager.add_option("-c", "--config",
                    help="config file",
                    required=False)
 
-manager.add_command("runservernoreload", Server(use_reloader=False))
+manager.add_command("shell", Shell(make_context=lambda: {'app': app}))
 
 if __name__ == "__main__":
     manager.run()

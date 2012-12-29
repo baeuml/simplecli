@@ -41,14 +41,19 @@ class Manager(object):
                 or a callable that returns such a variable.
     """
 
-    def __init__(self, app=None, usage=None):
+    @property
+    def description(self):
+        description = self._description or self.__doc__
+        return description.strip()
 
-        self.app = app
+    def __init__(self, context=None, usage=None, description=""):
 
         self._commands = dict()
         self._options = list()
+        self._context = context
 
         self.usage = usage
+        self._description = description
 
         self.parent = None
 
@@ -64,13 +69,13 @@ class Manager(object):
 
         The arguments are then passed to your function, e.g.::
 
-            def create_ctx(config=None):
-                app_ctx = {}
+            def create_context(config=None):
+                app_context = {}
                 if config:
                     import simplejson
-                    app_ctx = simplejson.load(open(config))
+                    app_context = simplejson.load(open(config))
 
-                return app_ctx
+                return app_context
 
             manager = Manager(create_ctx)
             manager.add_option("-c", "--config", dest="config", required=False)
@@ -90,26 +95,32 @@ class Manager(object):
 
         self._options.append(Option(*args, **kwargs))
 
-    def create_app(self, **kwargs):
+    def create_context(self, **kwargs):
         if self.parent:
             # Sub-manager, defer to parent Manager
-            return self.parent.create_app(**kwargs)
+            return self.parent.create_context(**kwargs)
 
-        if hasattr(self.app, '__call__'):
-            return self.app(**kwargs)
+        if hasattr(self._context, '__call__'):
+            return self._context(**kwargs)
 
-        return self.app
+        return self._context
 
-    def create_parser(self, prog):
+    def context(self):
+        return self._context
+
+    def create_parser(self, prog=None, usage=None):
         """
         Creates an ArgumentParser instance from options returned
         by get_options(), and a subparser for the given command.
         """
 
-        prog = os.path.basename(prog)
-        parser = argparse.ArgumentParser(prog=prog)
+        parser = argparse.ArgumentParser(prog=prog, usage=usage, add_help=False)
+        parser.add_argument('-h', '--help', action='store_true', default=False, help='show this help message and exit')
         for option in self.get_options():
             parser.add_argument(*option.args, **option.kwargs)
+
+        parser.add_argument("__command", nargs=argparse.OPTIONAL, default=None, help=argparse.SUPPRESS)
+        parser.add_argument("__args", nargs=argparse.REMAINDER, help=argparse.SUPPRESS)
 
         return parser
 
@@ -231,108 +242,116 @@ class Manager(object):
 
         return func
 
-    def get_usage(self):
+    def format_commands(self):
         """
         Returns string consisting of all commands and their descriptions.
         """
 
+        rv = []
         pad = max(map(len, self._commands.iterkeys())) + 2
         format = '  %%- %ds%%s' % pad
 
-        rv = []
-
-        if self.usage:
-            rv.append(self.usage)
-
-        for name, command in sorted(self._commands.iteritems()):
-            usage = name
-
-            if isinstance(command, Manager):
-                description = command.usage or ''
-            else:
+        if len(self._commands) > 0:
+            rv.append("Available commands:")
+            for name, command in sorted(self._commands.iteritems()):
+                usage = name
                 description = command.description or ''
-
-            usage = format % (name, description)
-            rv.append(usage)
+                usage = format % (name, description)
+                rv.append(usage)
 
         return "\n".join(rv)
 
-    def print_usage(self):
+    def print_help(self):
         """
-        Prints result of get_usage()
+        Prints help
         """
 
-        print self.get_usage()
+        print self._parser.format_help()
+        print self.format_commands()
 
-    def handle(self, prog, name, args=None):
-
-        args = list(args or [])
-
+    def _get_command(self, name):
         try:
-            command = self._commands[name]
+            return self._commands[name]
         except KeyError:
             raise InvalidCommand, "Command %s not found" % name
 
+    def handle(self, name, args=None, prog=None):
+
+        args = list(args or [])
+
+        command = self._get_command(name)
+
         if isinstance(command, Manager):
-            # Run sub-manager, stripping first argument
-            sys.argv = sys.argv[1:]
-            command.run()
+            # run sub-manager
+            command.run(args=args)
         else:
-            help_args = ('-h', '--help')
-
-            # remove -h/--help from args if present, and add to remaining args
-            app_args = [a for a in args if a not in help_args]
-
-            app_parser = self.create_parser(prog)
-            app_namespace, remaining_args = app_parser.parse_known_args(app_args)
-            app = self.create_app(**app_namespace.__dict__)
-
-            for arg in help_args:
-                if arg in args:
-                    remaining_args.append(arg)
-
             command_parser = command.create_parser(prog + " " + name)
             if getattr(command, 'capture_all_args', False):
                 command_namespace, unparsed_args = \
-                    command_parser.parse_known_args(remaining_args)
+                    command_parser.parse_known_args(args)
                 positional_args = [unparsed_args]
             else:
-                command_namespace = command_parser.parse_args(remaining_args)
+                command_namespace = command_parser.parse_args(args)
                 positional_args = []
 
-        return command.handle(app, *positional_args, **command_namespace.__dict__)
+        return command.run(*positional_args, **command_namespace.__dict__)
 
-    def run(self, commands=None, default_command=None):
+    def run(self, commands=None, default_command=None, prog=None, args=None):
         """
         Prepares manager to receive command line input. Usually run
-        inside "if __name__ == "__main__" block in a Python script.
+        inside "if __name__ == "__main__"" block in a Python script.
 
         :param commands: optional dict of commands. Appended to any commands
                          added using add_command().
 
         :param default_command: name of default command to run if no
                                 arguments passed.
+
+        :param args: list of arguments to parse (default: sys.argv[1:])
         """
 
         if commands:
             self._commands.update(commands)
 
-        try:
+        if prog is None:
+            prog = sys.argv[0]
+        if args is None:
+            args = sys.argv[1:]
+
+        self._parser = self.create_parser(prog, self.usage)
+        manager_namespace, remaining_args = self._parser.parse_known_args(args)
+
+        manager_args = manager_namespace.__dict__.copy()
+        del(manager_args["__command"])
+        del(manager_args["__args"])
+        del(manager_args["help"])
+        self._context = self.create_context(**manager_args)
+
+        command = manager_namespace.__dict__["__command"]
+
+        # handle help
+        if manager_namespace.help or command == "help":
+            if command is not None and command != "help":
+                cmd = self._get_command(command)
+                parser = cmd.create_parser(prog + " " + command)
+                parser.print_help()
+
+            else:
+                self.print_help()
+
+        else:
+            command = command or default_command
             try:
-                command = sys.argv[1]
-            except IndexError:
-                command = default_command
+                if command is None:
+                    raise InvalidCommand, "Missing command"
 
-            if command is None:
-                raise InvalidCommand, "Please provide a command:"
+                result = self.handle(command, manager_namespace.__dict__["__args"], prog=prog)
+                sys.exit(result or 0)
 
-            result = self.handle(sys.argv[0], command, sys.argv[2:])
-
-            sys.exit(result or 0)
-
-        except InvalidCommand, e:
-            print e
-            self.print_usage()
+            except InvalidCommand, e:
+                print e
+                print
+                self.print_help()
 
         sys.exit(1)
 

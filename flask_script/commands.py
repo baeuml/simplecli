@@ -132,13 +132,6 @@ class Command(object):
 
         return parser
 
-    def handle(self, app, *args, **kwargs):
-        """
-        Handles the command.
-        """
-        #TODO: pass app context
-        return self.run(*args, **kwargs)
-
     def run(self):
         """
         Runs a command. This must be implemented by the subclass. Should take

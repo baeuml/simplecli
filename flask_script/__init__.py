@@ -83,6 +83,9 @@ class Manager(object):
         the command.
 
         Arguments for this function are the same as for the Option class.
+
+        The return value of the function is stored in the Manager and can
+        be retrieved by calling manager.context().
         """
 
         self._options.append(Option(*args, **kwargs))
@@ -132,7 +135,7 @@ class Manager(object):
         """
         Decorator to add a command function to the registry.
 
-        :param func: command function.Arguments depend on the
+        :param func: command function. Arguments depend on the
                      options.
         """
 
@@ -230,8 +233,7 @@ class Manager(object):
 
     def get_usage(self):
         """
-        Returns string consisting of all commands and their
-        descriptions.
+        Returns string consisting of all commands and their descriptions.
         """
 
         pad = max(map(len, self._commands.iterkeys())) + 2

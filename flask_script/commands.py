@@ -139,33 +139,6 @@ class Command(object):
         """
         raise NotImplementedError
 
-    def prompt(self, name, default=None):
-        warnings.warn_explicit(
-            "Command.prompt is deprecated, use prompt() function instead")
-
-        prompt(name, default)
-
-    def prompt_pass(self, name, default=None):
-        warnings.warn_explicit(
-            "Command.prompt_pass is deprecated, use prompt_pass() function "
-            "instead")
-
-        prompt_pass(name, default)
-
-    def prompt_bool(self, name, default=False):
-        warnings.warn_explicit(
-            "Command.prompt_bool is deprecated, use prompt_bool() function "
-            "instead")
-
-        prompt_bool(name, default)
-
-    def prompt_choices(self, name, choices, default=None):
-        warnings.warn_explicit(
-            "Command.choices is deprecated, use prompt_choices() function "
-            "instead")
-
-        prompt_choices(name, choices, default)
-
 
 class Shell(Command):
     """

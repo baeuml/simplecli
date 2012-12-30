@@ -4,8 +4,7 @@ import StringIO
 import sys
 import unittest
 
-from flask import Flask
-from flask.ext.script import Command, Manager, InvalidCommand, Option
+from flask_script import Command, Manager, InvalidCommand, Option
 
 
 class SimpleCommand(Command):
@@ -71,49 +70,23 @@ class CommandWithCatchAll(Command):
         print remaining_args
 
 
-class TestCommands(unittest.TestCase):
-
-    TESTING = True
-
-    def setUp(self):
-
-        self.app = Flask(__name__)
-        self.app.config.from_object(self)
-
-
 class TestManager(unittest.TestCase):
 
     TESTING = True
 
     def setUp(self):
-
-        self.app = Flask(__name__)
-        self.app.config.from_object(self)
-
-    def test_with_default_commands(self):
-
-        manager = Manager(self.app)
-
-        assert 'runserver' in manager._commands
-        assert 'shell' in manager._commands
-
-    def test_without_default_commands(self):
-
-        manager = Manager(self.app, with_default_commands=False)
-
-        assert 'runserver' not in manager._commands
-        assert 'shell' not in manager._commands
+        pass
 
     def test_add_command(self):
 
-        manager = Manager(self.app)
+        manager = Manager()
         manager.add_command("simple", SimpleCommand())
 
         assert isinstance(manager._commands['simple'], SimpleCommand)
 
     def test_simple_command_decorator(self):
 
-        manager = Manager(self.app)
+        manager = Manager()
 
         @manager.command
         def hello():
@@ -121,12 +94,12 @@ class TestManager(unittest.TestCase):
 
         assert 'hello' in manager._commands
 
-        manager.handle("manage.py", "hello")
+        manager.run(prog="manage.py", args=["hello"])
         assert 'hello' in sys.stdout.getvalue()
 
     def test_simple_command_decorator_with_pos_arg(self):
 
-        manager = Manager(self.app)
+        manager = Manager()
 
         @manager.command
         def hello(name):
@@ -134,12 +107,12 @@ class TestManager(unittest.TestCase):
 
         assert 'hello' in manager._commands
 
-        manager.handle("manage.py", "hello", ["joe"])
+        manager.run(prog="manage.py", args=["hello", "joe"])
         assert 'hello joe' in sys.stdout.getvalue()
 
     def test_command_decorator_with_options(self):
 
-        manager = Manager(self.app)
+        manager = Manager()
 
         @manager.command
         def hello(name='fred'):
@@ -148,27 +121,27 @@ class TestManager(unittest.TestCase):
 
         assert 'hello' in manager._commands
 
-        manager.handle("manage.py", "hello", ["--name=joe"])
+        manager.run(prog="manage.py", args=["hello", "--name=joe"])
         assert 'hello joe' in sys.stdout.getvalue()
 
-        manager.handle("manage.py", "hello", ["-n joe"])
+        manager.run(prog="manage.py", args=["hello", "-n joe"])
         assert 'hello joe' in sys.stdout.getvalue()
 
         try:
-            manager.handle("manage.py", "hello", ["-h"])
+            manager.run(prog="manage.py", args=["hello", "-h"])
         except SystemExit:
             pass
         assert 'Prints your name' in sys.stdout.getvalue()
 
         try:
-            manager.handle("manage.py", "hello", ["--help"])
+            manager.run(prog="manage.py", args=["hello", "--help"])
         except SystemExit:
             pass
         assert 'Prints your name' in sys.stdout.getvalue()
 
     def test_command_decorator_with_boolean_options(self):
 
-        manager = Manager(self.app)
+        manager = Manager()
 
         @manager.command
         def verify(verified=False):
@@ -177,24 +150,24 @@ class TestManager(unittest.TestCase):
 
         assert 'verify' in manager._commands
 
-        manager.handle("manage.py", "verify", ["--verified"])
+        manager.run(prog="manage.py", args=["verify", "--verified"])
         assert 'YES' in sys.stdout.getvalue()
 
-        manager.handle("manage.py", "verify", ["-v"])
+        manager.run(prog="manage.py", args=["verify", "-v"])
         assert 'YES' in sys.stdout.getvalue()
 
-        manager.handle("manage.py", "verify", [])
+        manager.run(prog="manage.py", args=["verify"])
         assert 'NO' in sys.stdout.getvalue()
 
         try:
-            manager.handle("manage.py", "verify", ["-h"])
+            manager.run(prog="manage.py", args=["verify", "-h"])
         except SystemExit:
             pass
         assert 'Checks if verified' in sys.stdout.getvalue()
 
     def test_simple_command_decorator_with_pos_arg_and_options(self):
 
-        manager = Manager(self.app)
+        manager = Manager()
 
         @manager.command
         def hello(name, url=None):
@@ -207,15 +180,15 @@ class TestManager(unittest.TestCase):
 
         assert 'hello' in manager._commands
 
-        manager.handle("manage.py", "hello", ["joe"])
+        manager.run(prog="manage.py", args=["hello", "joe"])
         assert 'hello joe' in sys.stdout.getvalue()
 
-        manager.handle("manage.py", "hello", ["joe", '--url=reddit.com'])
+        manager.run(prog="manage.py", args=["hello", "joe", '--url=reddit.com'])
         assert 'hello joe from reddit.com' in sys.stdout.getvalue()
 
     def test_command_decorator_with_additional_options(self):
 
-        manager = Manager(self.app)
+        manager = Manager()
 
         @manager.option('-n', '--name', dest='name', help='Your name')
         def hello(name):
@@ -223,11 +196,11 @@ class TestManager(unittest.TestCase):
 
         assert 'hello' in manager._commands
 
-        manager.handle("manage.py", "hello", ["--name=joe"])
+        manager.run(prog="manage.py", args=["hello", "--name=joe"])
         assert 'hello joe' in sys.stdout.getvalue()
 
         try:
-            manager.handle("manage.py", "hello", ["-h"])
+            manager.run(prog="manage.py", args=["hello", "-h"])
         except SystemExit:
             pass
         assert "Your name" in sys.stdout.getvalue()
@@ -242,46 +215,50 @@ class TestManager(unittest.TestCase):
 
         assert 'hello_again' in manager._commands
 
-        manager.handle("manage.py", "hello_again", ["--name=joe"])
+        manager.run(prog="manage.py", args=["hello_again", "--name=joe"])
         assert 'hello joe' in sys.stdout.getvalue()
 
-        manager.handle("manage.py", "hello_again",
-                       ["--name=joe", "--url=reddit.com"])
+        manager.run(prog="manage.py", args=["hello_again", "--name=joe", "--url=reddit.com"])
         assert 'hello joe from reddit.com' in sys.stdout.getvalue()
 
-    def test_get_usage(self):
+    def test_print_help(self):
 
-        manager = Manager(self.app)
+        manager = Manager()
         manager.add_command("simple", SimpleCommand())
 
-        assert "simple     simple command" in manager.get_usage()
+        manager.print_help()
+        assert "simple  simple command" in sys.stdout.getvalue()
 
-    def test_get_usage_with_specified_usage(self):
+    def test_print_help_with_specified_usage(self):
 
-        manager = Manager(self.app, usage="hello")
+        manager = Manager(usage="hello")
         manager.add_command("simple", SimpleCommand())
 
-        usage = manager.get_usage()
-        assert "simple     simple command" in usage
-        assert "hello" in usage
+        manager.print_help()
+        assert "simple  simple command" in sys.stdout.getvalue()
+        assert "hello" in sys.stdout.getvalue()
 
     def test_run_existing_command(self):
 
-        manager = Manager(self.app)
+        manager = Manager()
         manager.add_command("simple", SimpleCommand())
-        manager.handle("manage.py", "simple")
+        manager.run(prog="manage.py", args=["simple"])
         assert 'OK' in sys.stdout.getvalue()
 
     def test_run_non_existant_command(self):
 
-        manager = Manager(self.app)
+        manager = Manager(exit_on_error=False)
+        manager.run(prog="manage.py", args=["simple"])
+        assert "Command simple not found" in sys.stdout.getvalue()
+
+        manager = Manager(exit_on_error=False, handle_exceptions=False)
         self.assertRaises(InvalidCommand,
-                          manager.handle,
-                          "manage.py", "simple")
+                          manager.run,
+                          prog="manage.py", args=["simple"])
 
     def test_run_existing(self):
 
-        manager = Manager(self.app)
+        manager = Manager()
         manager.add_command("simple", SimpleCommand())
         sys.argv = ["manage.py", "simple"]
         try:
@@ -292,7 +269,7 @@ class TestManager(unittest.TestCase):
 
     def test_run_existing_bind_later(self):
 
-        manager = Manager(self.app)
+        manager = Manager()
         sys.argv = ["manage.py", "simple"]
         try:
             manager.run({'simple': SimpleCommand()})
@@ -302,7 +279,7 @@ class TestManager(unittest.TestCase):
 
     def test_run_not_existing(self):
 
-        manager = Manager(self.app)
+        manager = Manager()
         sys.argv = ["manage.py", "simple"]
         try:
             manager.run()
@@ -312,7 +289,7 @@ class TestManager(unittest.TestCase):
 
     def test_run_no_name(self):
 
-        manager = Manager(self.app)
+        manager = Manager()
         sys.argv = ["manage.py"]
         try:
             manager.run()
@@ -321,7 +298,7 @@ class TestManager(unittest.TestCase):
 
     def test_run_good_options(self):
 
-        manager = Manager(self.app)
+        manager = Manager()
         manager.add_command("simple", CommandWithOptions())
         sys.argv = ["manage.py", "simple", "--name=Joe"]
         try:
@@ -332,7 +309,7 @@ class TestManager(unittest.TestCase):
 
     def test_run_dynamic_options(self):
 
-        manager = Manager(self.app)
+        manager = Manager()
         manager.add_command("simple", CommandWithDynamicOptions('Fred'))
         sys.argv = ["manage.py", "simple"]
         try:
@@ -342,7 +319,7 @@ class TestManager(unittest.TestCase):
         assert "Fred" in sys.stdout.getvalue()
 
     def test_run_catch_all(self):
-        manager = Manager(self.app)
+        manager = Manager()
         manager.add_command("catch", CommandWithCatchAll())
         sys.argv = ["manage.py", "catch", "pos1", "--foo", "pos2", "--bar"]
         try:
@@ -352,7 +329,7 @@ class TestManager(unittest.TestCase):
         assert "['pos1', 'pos2', '--bar']" in sys.stdout.getvalue()
 
     def test_run_bad_options(self):
-        manager = Manager(self.app)
+        manager = Manager()
         manager.add_command("simple", CommandWithOptions())
         sys.argv = ["manage.py", "simple", "--foo=bar"]
         try:
@@ -364,17 +341,13 @@ class TestManager(unittest.TestCase):
         finally:
             sys.stderr = sys_stderr_orig
 
-    def test_init_with_flask_instance(self):
-        manager = Manager(self.app)
-        assert callable(manager.app)
-
     def test_init_with_callable(self):
         manager = Manager(lambda: app)
-        assert callable(manager.app)
+        assert callable(manager.context())
 
     def test_raise_index_error(self):
 
-        manager = Manager(self.app)
+        manager = Manager()
 
         @manager.command
         def error():
@@ -386,7 +359,7 @@ class TestManager(unittest.TestCase):
             assert e.code == 1
 
     def test_run_with_default_command(self):
-        manager = Manager(self.app)
+        manager = Manager()
         manager.add_command('simple', SimpleCommand())
         try:
             manager.run(default_command='simple')
@@ -400,15 +373,13 @@ class TestSubManager(unittest.TestCase):
     TESTING = True
 
     def setUp(self):
-
-        self.app = Flask(__name__)
-        self.app.config.from_object(self)
+        pass
 
     def test_add_submanager(self):
 
         sub_manager = Manager()
 
-        manager = Manager(self.app)
+        manager = Manager()
         manager.add_command("sub_manager", sub_manager)
 
         assert isinstance(manager._commands['sub_manager'], Manager)
@@ -420,7 +391,7 @@ class TestSubManager(unittest.TestCase):
         sub_manager = Manager()
         sub_manager.add_command("simple", SimpleCommand())
 
-        manager = Manager(self.app)
+        manager = Manager()
         manager.add_command("sub_manager", sub_manager)
 
         sys.argv = ["manage.py", "sub_manager", "simple"]
@@ -432,11 +403,11 @@ class TestSubManager(unittest.TestCase):
 
         assert 'OK' in sys.stdout.getvalue()
 
-    def test_manager_usage_with_submanager(self):
+    def test_manager_description_with_submanager(self):
 
-        sub_manager = Manager(usage="Example sub-manager")
+        sub_manager = Manager(description="Example sub-manager")
 
-        manager = Manager(self.app)
+        manager = Manager()
         manager.add_command("sub_manager", sub_manager)
 
         sys.argv = ["manage.py"]
@@ -453,7 +424,7 @@ class TestSubManager(unittest.TestCase):
         sub_manager = Manager(usage="Example sub-manager")
         sub_manager.add_command("simple", SimpleCommand())
 
-        manager = Manager(self.app)
+        manager = Manager()
         manager.add_command("sub_manager", sub_manager)
 
         sys.argv = ["manage.py", "sub_manager"]
@@ -474,3 +445,5 @@ class TestSubManager(unittest.TestCase):
 
         assert 'runserver' not in sub_manager._commands
         assert 'shell' not in sub_manager._commands
+
+

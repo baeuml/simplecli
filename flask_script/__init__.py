@@ -46,13 +46,16 @@ class Manager(object):
         description = self._description or self.__doc__
         return description.strip()
 
-    def __init__(self, context=None, usage=None, description=""):
+    def __init__(self, context=None, usage=None, description="", prog=None, exit_on_error=True, handle_exceptions=True):
 
         self._commands = dict()
         self._options = list()
         self._context = context
+        self._prog = prog
+        self._exit_on_error = exit_on_error
+        self._handle_exceptions = handle_exceptions
 
-        self.usage = usage
+        self._usage = usage
         self._description = description
 
         self.parent = None
@@ -113,6 +116,8 @@ class Manager(object):
         Creates an ArgumentParser instance from options returned
         by get_options(), and a subparser for the given command.
         """
+
+        prog = prog or self._prog or sys.argv[0]
 
         parser = argparse.ArgumentParser(prog=prog, usage=usage, add_help=False)
         parser.add_argument('-h', '--help', action='store_true', default=False, help='show this help message and exit')
@@ -248,10 +253,11 @@ class Manager(object):
         """
 
         rv = []
-        pad = max(map(len, self._commands.iterkeys())) + 2
-        format = '  %%- %ds%%s' % pad
-
+        
         if len(self._commands) > 0:
+            pad = max(map(len, self._commands.iterkeys())) + 2
+            format = '  %%- %ds%%s' % pad
+
             rv.append("Available commands:")
             for name, command in sorted(self._commands.iteritems()):
                 usage = name
@@ -261,12 +267,13 @@ class Manager(object):
 
         return "\n".join(rv)
 
-    def print_help(self):
+    def print_help(self, prog=None):
         """
         Prints help
         """
 
-        print self._parser.format_help()
+        parser = self.create_parser(prog=prog, usage=self._usage)
+        print parser.format_help()
         print self.format_commands()
 
     def _get_command(self, name):
@@ -283,7 +290,8 @@ class Manager(object):
 
         if isinstance(command, Manager):
             # run sub-manager
-            command.run(args=args)
+            #print "Running submanager", name
+            return command.run(prog=prog + " " + name, args=args)
         else:
             command_parser = command.create_parser(prog + " " + name)
             if getattr(command, 'capture_all_args', False):
@@ -313,12 +321,12 @@ class Manager(object):
         if commands:
             self._commands.update(commands)
 
-        if prog is None:
-            prog = sys.argv[0]
+        #print "run:", prog, "args:", args
+        prog = prog or self._prog or sys.argv[0]
         if args is None:
             args = sys.argv[1:]
 
-        self._parser = self.create_parser(prog, self.usage)
+        self._parser = self.create_parser(prog=prog, usage=self._usage)
         manager_namespace, remaining_args = self._parser.parse_known_args(args)
 
         manager_args = manager_namespace.__dict__.copy()
@@ -337,7 +345,9 @@ class Manager(object):
                 parser.print_help()
 
             else:
-                self.print_help()
+                self.print_help(prog=prog)
+
+            sys.exit(0)
 
         else:
             command = command or default_command
@@ -345,13 +355,17 @@ class Manager(object):
                 if command is None:
                     raise InvalidCommand, "Missing command"
 
-                result = self.handle(command, manager_namespace.__dict__["__args"], prog=prog)
-                sys.exit(result or 0)
+                result = self.handle(command, args=manager_namespace.__dict__["__args"], prog=prog)
+                return result
 
             except InvalidCommand, e:
-                print e
-                print
-                self.print_help()
+                if self._handle_exceptions:
+                    print e
+                    print
+                    self.print_help(prog=prog)
+                else:
+                    raise
 
-        sys.exit(1)
+        if self._exit_on_error:
+            sys.exit(1)
 

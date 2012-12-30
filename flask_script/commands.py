@@ -156,7 +156,7 @@ class Shell(Command):
 
     banner = ''
 
-    description = 'Runs a Python shell inside Flask application context.'
+    description = 'Runs a Python shell.'
 
     def __init__(self, banner=None, make_context=None, use_ipython=True,
                 use_bpython=True):

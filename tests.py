@@ -4,7 +4,7 @@ import StringIO
 import sys
 import unittest
 
-from flask_script import Command, Manager, InvalidCommand, Option
+from simplecli import Command, Manager, InvalidCommand, Option
 
 
 class SimpleCommand(Command):

@@ -4,7 +4,6 @@ from __future__ import with_statement
 
 import os
 import code
-import warnings
 
 import argparse
 

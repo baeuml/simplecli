@@ -1,13 +1,13 @@
 """
-Flask-Script
+simplecli
 --------------
 
-Flask support for writing external scripts.
+A set of utilities for writing command line interfaces with ease.
 
 Links
 `````
 
-* `documentation <http://flask-script.readthedocs.org>`_
+* `documentation <http://simplecli.readthedocs.org>`_
 
 
 """
@@ -23,23 +23,23 @@ try:
 except ImportError:
     pass
 
-install_requires = ['Flask']
+install_requires = ['simplecli']
 if sys.version_info < (2, 7):
     install_requires += ['argparse']
 
 setup(
-    name='Flask-Script',
-    version='0.5.3-dev',
-    url='http://github.com/techniq/flask-script',
+    name='simplecli',
+    version='0.1-dev',
+    url='http://github.com/baeuml/simplecli',
     license='BSD',
     author='Dan Jacob',
     author_email='danjac354@gmail.com',
     maintainer='Sean Lynch',
     maintainer_email='techniq35@gmail.com',
-    description='Scripting support for Flask',
+    description='Makes writing command line interfaces simple',
     long_description=__doc__,
     packages=[
-        'flask_script'
+        'simplecli'
     ],
     test_suite='nose.collector',
     zip_safe=False,
@@ -50,12 +50,11 @@ setup(
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
-        'Environment :: Web Environment',
+        'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ]
 )

@@ -1,7 +1,7 @@
 import pprint
 import simplejson
 
-from flask_script import Manager, prompt_choices, Shell
+from simplecli import Manager, prompt_choices
 
 def create_ctx(config=None, debug=False):
     print "Creating app context"

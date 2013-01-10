@@ -7,9 +7,8 @@ python:
   - "3.3"
 
 install:
-  - sudo apt-get install -qq python3-nose
   - pip install -r requirements.txt --use-mirrors
-  - export NOSETESTS=nosetests; if [[ "3" == $(python -c "import sys; sys.stdout.write(str(sys.version_info.major))") ]]; then export NOSETESTS=nosetests3; fi
+  - if [[ ${TRAVIS_PYTHON_VERSION:0:1} == "3" ]]; then sudo apt-get install -qq python3-nose; fi
 
 script:
-  - $NOSETESTS
+  - if [[ ${TRAVIS_PYTHON_VERSION:0:1} == "3" ]]; then nosetests3; else nosetests; fi

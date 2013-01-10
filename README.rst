@@ -1,7 +1,10 @@
 simplecli
 =========
 
-.. image:: https://secure.travis-ci.org/baeuml/simplecli.png
+|TravisCI|_
+
+.. |TravisCI| image:: https://secure.travis-ci.org/baeuml/simplecli.png
+.. _TravisCI: https://travis-ci.org/baeuml/simplecli
 
 A set of decorators, classes and helpers for writing your own 
 command line interfaces.

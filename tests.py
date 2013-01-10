@@ -9,7 +9,7 @@ import unittest
 
 from simplecli import Command, Manager, InvalidCommand, Option
 
-if sys.version_info.major > 2:
+if sys.version_info[0] > 2:
     unicode_type = str
 else:
     unicode_type = unicode

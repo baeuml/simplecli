@@ -255,11 +255,11 @@ class Manager(object):
         rv = []
         
         if len(self._commands) > 0:
-            pad = max(map(len, self._commands.iterkeys())) + 2
+            pad = max(map(len, self._commands.keys())) + 2
             format = '  %%- %ds%%s' % pad
 
             rv.append("Available commands:")
-            for name, command in sorted(self._commands.iteritems()):
+            for name, command in sorted(self._commands.items()):
                 usage = name
                 description = command.description or ''
                 usage = format % (name, description)

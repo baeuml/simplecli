@@ -164,6 +164,11 @@ class Manager(object):
         defaults = defaults or []
         kwargs = dict(zip(*[reversed(l) for l in (args, defaults)]))
 
+        if sys.version_info.major > 2:
+            unicode_type = str
+        else:
+            unicode_type = unicode
+
         for arg in args:
             if arg in kwargs:
 
@@ -180,12 +185,12 @@ class Manager(object):
                     options.append(Option('-%s' % arg[0],
                                           '--%s' % arg,
                                           dest=arg,
-                                          type=unicode,
+                                          type=unicode_type,
                                           required=False,
                                           default=default))
 
             else:
-                options.append(Option(arg, type=unicode))
+                options.append(Option(arg, type=unicode_type))
 
         command = Command()
         command.run = func

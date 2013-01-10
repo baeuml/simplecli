@@ -1,17 +1,25 @@
 # -*- coding: utf-8 -*-
-
-import StringIO
+from __future__ import print_function
+try:
+    import StringIO
+except:
+    import io as StringIO
 import sys
 import unittest
 
 from simplecli import Command, Manager, InvalidCommand, Option
+
+if sys.version_info.major > 2:
+    unicode_type = str
+else:
+    unicode_type = unicode
 
 
 class SimpleCommand(Command):
     "simple command"
 
     def run(self):
-        print "OK"
+        print("OK")
 
 
 class CommandWithArgs(Command):
@@ -22,7 +30,7 @@ class CommandWithArgs(Command):
     )
 
     def run(self, name):
-        print name
+        print(name)
 
 
 class CommandWithOptions(Command):
@@ -35,7 +43,7 @@ class CommandWithOptions(Command):
     )
 
     def run(self, name):
-        print name
+        print(name)
 
 
 class CommandWithDynamicOptions(Command):
@@ -54,7 +62,7 @@ class CommandWithDynamicOptions(Command):
         )
 
     def run(self, name):
-        print name
+        print(name)
 
 
 class CommandWithCatchAll(Command):
@@ -67,7 +75,7 @@ class CommandWithCatchAll(Command):
                        action='store_true'),)
 
     def run(self, remaining_args, foo):
-        print remaining_args
+        print(remaining_args)
 
 
 class TestManager(unittest.TestCase):
@@ -90,7 +98,7 @@ class TestManager(unittest.TestCase):
 
         @manager.command
         def hello():
-            print "hello"
+            print("hello")
 
         assert 'hello' in manager._commands
 
@@ -103,7 +111,7 @@ class TestManager(unittest.TestCase):
 
         @manager.command
         def hello(name):
-            print "hello", name
+            print("hello", name)
 
         assert 'hello' in manager._commands
 
@@ -117,7 +125,7 @@ class TestManager(unittest.TestCase):
         @manager.command
         def hello(name='fred'):
             "Prints your name"
-            print "hello", name
+            print("hello", name)
 
         assert 'hello' in manager._commands
 
@@ -146,7 +154,7 @@ class TestManager(unittest.TestCase):
         @manager.command
         def verify(verified=False):
             "Checks if verified"
-            print "VERIFIED ?", "YES" if verified else "NO"
+            print("VERIFIED ?", "YES" if verified else "NO")
 
         assert 'verify' in manager._commands
 
@@ -172,11 +180,11 @@ class TestManager(unittest.TestCase):
         @manager.command
         def hello(name, url=None):
             if url:
-                assert type(url) is unicode
-                print "hello", name, "from", url
+                assert type(url) is unicode_type
+                print("hello", name, "from", url)
             else:
-                assert type(name) is unicode
-                print "hello", name
+                assert type(name) is unicode_type
+                print("hello", name)
 
         assert 'hello' in manager._commands
 
@@ -192,7 +200,7 @@ class TestManager(unittest.TestCase):
 
         @manager.option('-n', '--name', dest='name', help='Your name')
         def hello(name):
-            print "hello", name
+            print("hello", name)
 
         assert 'hello' in manager._commands
 
@@ -209,9 +217,9 @@ class TestManager(unittest.TestCase):
         @manager.option('-u', '--url', dest='url', help='Your URL')
         def hello_again(name, url=None):
             if url:
-                print "hello", name, "from", url
+                print("hello", name, "from", url)
             else:
-                print "hello", name
+                print("hello", name)
 
         assert 'hello_again' in manager._commands
 
@@ -263,7 +271,7 @@ class TestManager(unittest.TestCase):
         sys.argv = ["manage.py", "simple"]
         try:
             manager.run()
-        except SystemExit, e:
+        except SystemExit as e:
             assert e.code == 0
         assert 'OK' in sys.stdout.getvalue()
 
@@ -273,7 +281,7 @@ class TestManager(unittest.TestCase):
         sys.argv = ["manage.py", "simple"]
         try:
             manager.run({'simple': SimpleCommand()})
-        except SystemExit, e:
+        except SystemExit as e:
             assert e.code == 0
         assert 'OK' in sys.stdout.getvalue()
 
@@ -283,7 +291,7 @@ class TestManager(unittest.TestCase):
         sys.argv = ["manage.py", "simple"]
         try:
             manager.run()
-        except SystemExit, e:
+        except SystemExit as e:
             assert e.code == 1
         assert 'OK' not in sys.stdout.getvalue()
 
@@ -293,7 +301,7 @@ class TestManager(unittest.TestCase):
         sys.argv = ["manage.py"]
         try:
             manager.run()
-        except SystemExit, e:
+        except SystemExit as e:
             assert e.code == 1
 
     def test_run_good_options(self):
@@ -303,7 +311,7 @@ class TestManager(unittest.TestCase):
         sys.argv = ["manage.py", "simple", "--name=Joe"]
         try:
             manager.run()
-        except SystemExit, e:
+        except SystemExit as e:
             assert e.code == 0
         assert "Joe" in sys.stdout.getvalue()
 
@@ -314,7 +322,7 @@ class TestManager(unittest.TestCase):
         sys.argv = ["manage.py", "simple"]
         try:
             manager.run()
-        except SystemExit, e:
+        except SystemExit as e:
             assert e.code == 0
         assert "Fred" in sys.stdout.getvalue()
 
@@ -324,7 +332,7 @@ class TestManager(unittest.TestCase):
         sys.argv = ["manage.py", "catch", "pos1", "--foo", "pos2", "--bar"]
         try:
             manager.run()
-        except SystemExit, e:
+        except SystemExit as e:
             assert e.code == 0
         assert "['pos1', 'pos2', '--bar']" in sys.stdout.getvalue()
 
@@ -336,7 +344,7 @@ class TestManager(unittest.TestCase):
             sys_stderr_orig = sys.stderr
             sys.stderr = StringIO.StringIO()
             manager.run()
-        except SystemExit, e:
+        except SystemExit as e:
             assert e.code == 2
         finally:
             sys.stderr = sys_stderr_orig
@@ -355,7 +363,7 @@ class TestManager(unittest.TestCase):
 
         try:
             self.assertRaises(IndexError, manager.run, default_command="error")
-        except SystemExit, e:
+        except SystemExit as e:
             assert e.code == 1
 
     def test_run_with_default_command(self):
@@ -363,7 +371,7 @@ class TestManager(unittest.TestCase):
         manager.add_command('simple', SimpleCommand())
         try:
             manager.run(default_command='simple')
-        except SystemExit, e:
+        except SystemExit as e:
             assert e.code == 0
         assert 'OK' in sys.stdout.getvalue()
 
@@ -398,7 +406,7 @@ class TestSubManager(unittest.TestCase):
 
         try:
             manager.run()
-        except SystemExit, e:
+        except SystemExit as e:
             assert e.code == 0
 
         assert 'OK' in sys.stdout.getvalue()
@@ -414,7 +422,7 @@ class TestSubManager(unittest.TestCase):
 
         try:
             manager.run()
-        except SystemExit, e:
+        except SystemExit as e:
             assert e.code == 1
 
         assert 'sub_manager  Example sub-manager' in sys.stdout.getvalue()
@@ -431,7 +439,7 @@ class TestSubManager(unittest.TestCase):
 
         try:
             manager.run()
-        except SystemExit, e:
+        except SystemExit as e:
             assert e.code == 1
 
         assert "simple  simple command" in sys.stdout.getvalue()

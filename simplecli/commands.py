@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import with_statement
+from __future__ import print_function
 
 import os
 import code
@@ -224,7 +225,7 @@ class Clean(Command):
             for filename in filenames:
                 if '.pyc' or '.pyo' in filename:
                     full_pathname = os.path.join(dirpath, filename)
-                    print 'Removing %s' % full_pathname
+                    print('Removing %s' % full_pathname)
                     os.remove(full_pathname)
 
 

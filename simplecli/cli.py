@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-import string
 import getpass
-
 
 def prompt(name, default=None):
     """
@@ -62,8 +60,7 @@ def prompt_bool(name, default=False, yes_choices=None, no_choices=None):
         elif rv.lower() in no_choices:
             return False
 
-
-def prompt_choices(name, choices, default=None, resolve=string.lower,
+def prompt_choices(name, choices, default=None, resolve=lambda s: s.lower(),
                    no_choice=('none',)):
     """
     Grabs user input from command line from set of provided choices.

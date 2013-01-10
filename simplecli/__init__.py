@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import with_statement
+from __future__ import print_function
 
 import sys
 import inspect
@@ -272,14 +273,14 @@ class Manager(object):
         """
 
         parser = self.create_parser(prog=prog, usage=self._usage)
-        print parser.format_help()
-        print self.format_commands()
+        print(parser.format_help())
+        print(self.format_commands())
 
     def _get_command(self, name):
         try:
             return self._commands[name]
         except KeyError:
-            raise InvalidCommand, "Command %s not found" % name
+            raise InvalidCommand("Command %s not found" % name)
 
     def handle(self, name, args=None, prog=None):
 
@@ -352,15 +353,15 @@ class Manager(object):
             command = command or default_command
             try:
                 if command is None:
-                    raise InvalidCommand, "Missing command"
+                    raise InvalidCommand("Missing command")
 
                 result = self.handle(command, args=manager_namespace.__dict__["__args"], prog=prog)
                 return result
 
-            except InvalidCommand, e:
+            except InvalidCommand as e:
                 if self._handle_exceptions:
-                    print e
-                    print
+                    print(e)
+                    print()
                     self.print_help(prog=prog)
                 else:
                     raise

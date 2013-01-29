@@ -360,7 +360,8 @@ class Manager(object):
                 if command is None:
                     raise InvalidCommand("Missing command")
 
-                result = self.handle(command, args=manager_namespace.__dict__["__args"], prog=prog)
+                command_args = manager_namespace.__dict__["__args"] + remaining_args
+                result = self.handle(command, args=command_args, prog=prog)
                 return result
 
             except InvalidCommand as e:

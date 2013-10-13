@@ -22,7 +22,7 @@ try:
 except ImportError:
     pass
 
-install_requires = ['simplecli']
+install_requires = []
 if sys.version_info < (2, 7):
     install_requires += ['argparse']
 

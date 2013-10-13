@@ -32,10 +32,8 @@ setup(
     version='0.1-dev',
     url='http://github.com/baeuml/simplecli',
     license='BSD',
-    author='Dan Jacob',
-    author_email='danjac354@gmail.com',
-    maintainer='Sean Lynch',
-    maintainer_email='techniq35@gmail.com',
+    author='Dan Jacob, Sean Lynch, Martin Baeuml',
+    author_email='danjac354@gmail.com, techniq35@gmail.com, baeuml@gmail.com',
     description='Makes writing command line interfaces simple',
     long_description=__doc__,
     packages=[

@@ -11,6 +11,8 @@ import argparse
 from .commands import Group, Option, InvalidCommand, Command, Shell
 from .cli import prompt, prompt_pass, prompt_bool, prompt_choices
 
+__version__ = "0.1.0"
+
 __all__ = ["Command", "Shell", "Manager", "Group", "Option",
            "prompt", "prompt_pass", "prompt_bool", "prompt_choices"]
 

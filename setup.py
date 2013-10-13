@@ -22,13 +22,15 @@ try:
 except ImportError:
     pass
 
+import simplecli
+
 install_requires = []
 if sys.version_info < (2, 7):
     install_requires += ['argparse']
 
 setup(
     name='simplecli',
-    version='0.1-dev',
+    version=simplecli.__version__,
     url='http://github.com/baeuml/simplecli',
     license='BSD',
     author='Dan Jacob, Sean Lynch, Martin Baeuml',
